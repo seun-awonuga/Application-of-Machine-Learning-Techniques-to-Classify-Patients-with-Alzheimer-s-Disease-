@@ -65,6 +65,8 @@ D. Class Balancing
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/a240ec78-6ead-4f17-8dc2-02c134c1106b)
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/8d4524eb-83d5-4692-aa68-1df8323dd494)
 
+-----
+# Model Evaluation
 - Random Forest had the best overall prediction accuracy for the balanced data. On the other hand, k++ means unsupervised algorithm produced an overall prediction accuracy of 89% using the imbalanced data
 - In terms of the positive prediction value (PPV) analysis on the imbalanced data, all but k++means model achieved over 85% success in predicting patients with Alzheimer’s diagnosis that actually suffer or have symptoms of Alzheimer’s disease
 - When the balanced data was used for the supervised ML models, however, the unsupervised ML model dropped to 72% PPV rate in predicting patients with Alzheimer’s diagnosis that actually have symptoms or suffer from Alzheimer’s disease
