@@ -11,5 +11,5 @@ This research will evaluate the efficiency of supervised and unsupervised learni
 - categorization of the three diagnostic results was carried - healthy control  using a patient’s health assessment and medical history available on the dataset
 - The dataset was collated as a Microsoft Excel comma separated value (CSV) format. It is in a structured format with dimensions of 862 observations and 32 features
 - The first 31 variables are explanatory features while the last column (“diagnosis”) represents the multiclass clinical outcomes
-  
+
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/54888e78-6f10-4b17-ba76-8f64751a5b9a)
