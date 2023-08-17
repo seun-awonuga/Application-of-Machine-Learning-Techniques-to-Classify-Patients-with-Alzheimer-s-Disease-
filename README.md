@@ -2,7 +2,7 @@
 ************************
 
 # Project Summary
-This research will evaluate the efficiency of supervised and unsupervised learning methods in categorizing patients with Healthy Control (HC) and non-HC diagnosis, which is Alzheimer’s Disease
+This research will evaluate the efficiency of supervised and unsupervised learning methods in categorizing patients with Healthy Control (HC) and non-HC diagnosis, which is Alzheimer’s Disease. Four supervised ML algortithms and One unsupervised ML algortihm was used to evaulate the efficiency of the research method
 
 # Dataset Description
 - The dataset was acquired by researchers from the Alzheimer’s Disease Neuroimaging Initiative (ADNI). It was based on the studies of Ageing data related to Australian Imaging Biomarkers and Lifestyle
