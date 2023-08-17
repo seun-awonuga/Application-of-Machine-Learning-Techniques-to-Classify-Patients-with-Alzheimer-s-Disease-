@@ -4,6 +4,8 @@
 # Project Summary
 This research will evaluate the efficiency of supervised and unsupervised learning methods in categorizing patients with Healthy Control (HC) and non-HC diagnosis, which is Alzheimer’s Disease. Four supervised ML algortithms and One unsupervised ML algortihm was used to evaulate the efficiency of the research method
 
+******************
+
 # Dataset Description
 - The dataset was acquired by researchers from the Alzheimer’s Disease Neuroimaging Initiative (ADNI). It was based on the studies of Ageing data related to Australian Imaging Biomarkers and Lifestyle
 - The dataset was collected for the purpose of applying ML algorithms to effectively categorize three diagnostic results -
@@ -14,6 +16,7 @@ This research will evaluate the efficiency of supervised and unsupervised learni
 
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/54888e78-6f10-4b17-ba76-8f64751a5b9a)
 
+*********************
 
 # Methodology
 A. Exploratory Data analysis: - R programming language will be used to conduct exploratory statistical analysis and preprocessing actions conducted on the entire dataset
@@ -26,6 +29,8 @@ C. Feature Selection
 
 D. Class Balancing
  - The Random Up-Sampling (RUS) balancing technique is applied because the ratio of majority (“HC = 0’) and minority (non-HC = 1) class is 66% and 33% respectively
+
+******************
 
 # Data Modelling
 i) Four supervised ML algortithms (Decision Tree , Logistic Regression, Random Forest, K-nearest Neighbour) was used to evaulate the efficiency of the research method
