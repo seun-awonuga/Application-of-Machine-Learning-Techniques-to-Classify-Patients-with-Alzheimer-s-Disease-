@@ -1,12 +1,12 @@
 # Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-
 ************************
 
-# Project Summary
+# I. Project Summary
 This research will evaluate the efficiency of supervised and unsupervised learning methods in categorizing patients with Healthy Control (HC) and non-HC diagnosis, which is Alzheimer’s Disease. Four supervised ML algortithms and One unsupervised ML algortihm was used to evaulate the efficiency of the research method
 
 ******************
 
-# Dataset Description
+# II. Dataset Description
 - The dataset was acquired by researchers from the Alzheimer’s Disease Neuroimaging Initiative (ADNI). It was based on the studies of Ageing data related to Australian Imaging Biomarkers and Lifestyle
 - The dataset was collected for the purpose of applying ML algorithms to effectively categorize three diagnostic results -
   healthy control (HC), mild cognitive impairment (MCI), and Alzheimer’s disease (AD)
@@ -18,7 +18,7 @@ This research will evaluate the efficiency of supervised and unsupervised learni
 
 *********************
 
-# Methodology
+# III. Methodology
 A. Exploratory Data analysis: - R programming language will be used to conduct exploratory statistical analysis and preprocessing actions 
 B. Data Preprocessing:
 - The target variable is transformed from a 3-class outcome to a binary class outcome. The diagnosis outcome (class ‘2’ and ‘3’) in the target variable is reclassified as non-healthy control (‘non-HC’) while class = ‘1’ is reclassified as healthy-control (‘HC’). Mode Imputation technique is employed to replace negative data values [7] in categorical columns and the target class (diagnosis), while the mean imputation method was used to replace incorrect values in columns with continuous values
@@ -38,7 +38,7 @@ D. Class Balancing
 
 ********************
 
-# Results
+# IV. Results / Insights
 
 Insight 1
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/b2c0bc2a-239c-485b-8eb4-a8f13c59b362)
