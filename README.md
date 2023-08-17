@@ -60,7 +60,8 @@ D. Class Balancing
 - the boxplot shows the decreasing order of importance of each feature linked to the diagnosis outcome
 - nine (9) variables were considered important, however considering the boxplot; five features - CDGLOBAL, LDELTOTAL, LIMMTOTAL, MMSCORE and RCT20 will be considered in fitting the classifier model because their importance is significantly greater than other features
 
---
+---
+
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/a240ec78-6ead-4f17-8dc2-02c134c1106b)
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/8d4524eb-83d5-4692-aa68-1df8323dd494)
 
