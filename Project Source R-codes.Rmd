@@ -1,0 +1,591 @@
+
+
+1.    COURSEWORK: 'Applying Machine Learning Techniques To Classify Patients With Alzheimer's Disease'
+
+2.    NAME: 'OLUWASEUN AWONUGA'
+
+3.    B00 NUMBER: B00895308
+
+4.    Date: "2023-05-02"
+
+
+
+```{r}
+
+#install.packages("Metrics")
+#install.packages('klaR')
+#install.packages("mikropml")
+#install.packages("PerformanceAnalytics")
+#install.packages("psych",dependencies=TRUE)
+#install.packages(c("psych","GPArotation"),dependencies=TRUE)
+#install.packages("NeuralSens")
+#install.packages("MLeval")
+#install.packages('Boruta')
+#install.packages("vctrs")
+#install.packages("caret")
+#install.packages("randomForest")
+#install.packages("gmodels")
+library(knitr)
+library(gmodels)
+library(Boruta)
+library(randomForest)
+library(mlbench)
+library(caret)
+library(mikropml)
+library(mlbench)
+library(caret)
+library(psych)
+library(dplyr)
+library(PerformanceAnalytics)
+library(NeuralSens)
+library(NeuralNetTools)
+library(nnet)
+library(MLeval)
+library(randomForest)
+library("imbalance")
+library(smotefamily)
+library(devtools)
+library(caret)
+library(data.table)
+library(tidyverse)  # data manipulation
+library(cluster)    # clustering algorithms
+library(factoextra) # clustering algorithms & visualization - fviz
+library(ggplot2) # general plotting
+library(GGally) # ggpair for pairplot
+library(dplyr) # data manipulation
+library(NbClust) # Determine best cluster number using iteration for k-mean
+library(caret) # Train test computation
+library(e1071) # train test computation
+library(gridExtra)
+library(tidyr)
+
+```
+
+
+
+```{r }
+
+# LOADING THE DATASET FOR EYEBALLING
+
+df_diagnosis <- read.csv("C:/Users/Seun/Documents/MSC DATA SCIENCE (ULSTER UNIVERSITY)/MACHINE LEARNING/Master.csv")
+str(df_diagnosis)
+dim(df_diagnosis)
+
+```
+
+
+
+```{r}
+
+##### SUMMARY STATISTICS WITH THE ORIGINAL DATASET USING THE PREDEFINED FEATURE CHARACTERISICS FROM DATA DICTIONARY ###
+
+
+# To Change all the numerical columns and convert it to categorical columns based on the data dictionary 
+cols <- c(2,4:15,28,32)
+df_diagnosis[,cols] <- lapply(df_diagnosis[,cols] , factor)
+str(df_diagnosis)
+
+# To change the MMSCORE column to factor based on data dictionary
+setDT(df_diagnosis)
+df_diagnosis[MMSCORE >= 25  & MMSCORE <= 30, MMSCORE_ := 1]
+df_diagnosis[MMSCORE >= 21  & MMSCORE <= 24, MMSCORE_ := 2]
+df_diagnosis[MMSCORE >= 10  & MMSCORE <= 20, MMSCORE_ := 3]
+df_diagnosis[MMSCORE <= 9 , MMSCORE_ := 4]
+df_diagnosis$MMSCORE <- df_diagnosis$MMSCORE_
+
+df_diagnosis <- df_diagnosis[,-29]
+df_diagnosis  <- df_diagnosis %>% relocate(CDGLOBAL, MMSCORE_, .before = LIMMTOTAL) #%>% head()
+
+df_diagnosis$MMSCORE_ <- as.factor(df_diagnosis$MMSCORE_)
+
+# TO SKIM THE ORIGINAL DATASET WITH SKIM FUNCTION. THIS FUNCTION WORKS SIMILAR TO "SUMMARY" FUNCTION
+library(skimr)
+skimmed <- skim(df_diagnosis)
+skimmed
+
+```
+
+
+```{r}
+
+# LOADING THE ORIGINAL DATASET AND COUNTING OBSERVATIONS WITH NEGATIVE VALUES AND INCORRECT DATA
+
+df_diagnosis <- read.csv("C:/Users/Seun/Documents/MSC DATA SCIENCE (ULSTER UNIVERSITY)/MACHINE LEARNING/Master.csv")
+
+# To count the number of observations that have a negative value
+row.with.negative <- apply(df_diagnosis, 1, function(row) any(row < 0))
+which(row.with.negative)
+length(which(row.with.negative))
+
+dim(na.omit(df_diagnosis))
+
+apply(df_diagnosis,2,mean)
+apply(df_diagnosis,2,sd)
+
+
+
+################################   DATA CLEANING + DATA PREPROCESSING ACTIONS #################################3
+
+# Action 1 - Convert MMSCORE to a categorical column with levels based on data dictionary. Change MMSCORE to a new variable
+library(data.table)
+setDT(df_diagnosis)
+df_diagnosis[MMSCORE >= 25  & MMSCORE <= 30, MMSCORE_ := 1]
+df_diagnosis[MMSCORE >= 21  & MMSCORE <= 24, MMSCORE_ := 2]
+df_diagnosis[MMSCORE >= 10  & MMSCORE <= 20, MMSCORE_ := 3]
+df_diagnosis[MMSCORE <= 9 , MMSCORE_ := 4]
+
+df_diagnosis$MMSCORE <- df_diagnosis$MMSCORE_
+
+# Action 2 -  Remove the previous MMSCORE variable based on the index and relocate it to where initial variable was situated
+df_diagnosis <- df_diagnosis[,-29]
+#df_diagnosis$MMSCORE_ <- as.factor(df_diagnosis$MMSCORE_)
+df_diagnosis  <- df_diagnosis %>% relocate(CDGLOBAL, MMSCORE_, .before = LIMMTOTAL) #%>% head()
+
+
+# Action 3 - remove the -4 value in all 16 categorical columns in the data dictionary and replace -4 with "NA" 
+library(dplyr)
+df_diagnosis <- df_diagnosis %>% mutate_at(c(4,5,6,7,8,9,10,11,12,13,14,15,28,32), ~na_if(., -4))
+df_diagnosis <- df_diagnosis %>% mutate_at(c(3), ~na_if(., 97))
+df_diagnosis <- df_diagnosis %>% mutate_at(c(3), ~na_if(., 98))
+df_diagnosis <- df_diagnosis %>% mutate_at(c(3), ~na_if(., 99))
+df_diagnosis <- df_diagnosis %>% mutate_at(c(3), ~na_if(., 100))
+df_diagnosis <- df_diagnosis %>% mutate_at(c(32), ~na_if(., 7))
+str(df_diagnosis)
+
+# Action 4 - Create a mode function to replace NA in the categorical columns with the mode value 
+Mode <- function(x) {
+  ux <- na.omit(unique(x))
+  tab <- tabulate(match(x,ux)); ux[tab == max(tab)]
+}
+
+# Action 5 - Replace NA with the mode of the values in all the 16 categorical columns
+Mode(df_diagnosis$Age);  df_diagnosis$Age[is.na(df_diagnosis$Age)] <- Mode(df_diagnosis$Age)
+Mode(df_diagnosis$MHPSYCH);  df_diagnosis$MHPSYCH[is.na(df_diagnosis$MHPSYCH)] <- Mode(df_diagnosis$MHPSYCH)
+Mode(df_diagnosis$MH2NEURL); df_diagnosis$MH2NEURL[is.na(df_diagnosis$MH2NEURL)] <- Mode(df_diagnosis$MH2NEURL)
+Mode(df_diagnosis$MH4CARD ); df_diagnosis$MH4CARD [is.na(df_diagnosis$MH4CARD )] <- Mode(df_diagnosis$MH4CARD)
+Mode(df_diagnosis$MH6HEPAT); df_diagnosis$MH6HEPAT[is.na(df_diagnosis$MH6HEPAT)] <- Mode(df_diagnosis$MH6HEPAT)
+Mode(df_diagnosis$MH8MUSCL); df_diagnosis$MH8MUSCL[is.na(df_diagnosis$MH8MUSCL)] <- Mode(df_diagnosis$MH8MUSCL)
+Mode(df_diagnosis$MH9ENDO); df_diagnosis$MH9ENDO[is.na(df_diagnosis$MH9ENDO)] <- Mode(df_diagnosis$MH9ENDO)
+Mode(df_diagnosis$MH10GAST); df_diagnosis$MH10GAST[is.na(df_diagnosis$MH10GAST)] <- Mode(df_diagnosis$MH10GAST)
+Mode(df_diagnosis$MH12RENA); df_diagnosis$MH12RENA[is.na(df_diagnosis$MH12RENA)] <- Mode(df_diagnosis$MH12RENA)
+Mode(df_diagnosis$MH16SMOK); df_diagnosis$MH16SMOK[is.na(df_diagnosis$MH16SMOK)] <- Mode(df_diagnosis$MH16SMOK)
+Mode(df_diagnosis$MH17MALI); df_diagnosis$MH17MALI[is.na(df_diagnosis$MH17MALI)] <- Mode(df_diagnosis$MH17MALI)
+Mode(df_diagnosis$APGEN1); df_diagnosis$APGEN1[is.na(df_diagnosis$APGEN1)] <- Mode(df_diagnosis$APGEN1)
+Mode(df_diagnosis$APGEN2); df_diagnosis$APGEN2[is.na(df_diagnosis$APGEN2)] <- Mode(df_diagnosis$APGEN2)
+Mode(df_diagnosis$CDGLOBAL); df_diagnosis$CDGLOBAL[is.na(df_diagnosis$CDGLOBAL)] <- Mode(df_diagnosis$CDGLOBAL)
+Mode(df_diagnosis$Diagnosis); df_diagnosis$Diagnosis[is.na(df_diagnosis$Diagnosis)] <- Mode(df_diagnosis$Diagnosis)
+
+
+# Action 6 - remove the -4 value in all 16 columns with continous values and replace -4 with "NA" 
+df_diagnosis <- df_diagnosis %>% mutate_at(c(16,17,18,19,20,21,22,23,24,25,26,27,30,31), ~na_if(., -4))
+str(df_diagnosis)
+
+# Action 7 - Replace NA with the mean of the values in all the 16 categorical columns
+mean(df_diagnosis$AXT117, na.rm = TRUE);  df_diagnosis$AXT117 [is.na(df_diagnosis$AXT117)] <- mean(df_diagnosis$AXT117, na.rm = TRUE)
+mean(df_diagnosis$BAT126, na.rm = TRUE); df_diagnosis$BAT126[is.na(df_diagnosis$BAT126)] <- mean(df_diagnosis$BAT126, na.rm = TRUE)
+mean(df_diagnosis$HMT3, na.rm = TRUE); df_diagnosis$HMT3[is.na(df_diagnosis$HMT3)] <- mean(df_diagnosis$HMT3, na.rm = TRUE)
+mean(df_diagnosis$HMT7, na.rm = TRUE); df_diagnosis$HMT7[is.na(df_diagnosis$HMT7)] <- mean(df_diagnosis$HMT7, na.rm = TRUE)
+mean(df_diagnosis$HMT13, na.rm = TRUE); df_diagnosis$HMT13[is.na(df_diagnosis$HMT13)] <- mean(df_diagnosis$HMT13, na.rm = TRUE)
+mean(df_diagnosis$HMT40, na.rm = TRUE); df_diagnosis$HMT40[is.na(df_diagnosis$HMT40)] <- mean(df_diagnosis$HMT40, na.rm = TRUE)
+mean(df_diagnosis$HMT100, na.rm = TRUE); df_diagnosis$HMT100[is.na(df_diagnosis$HMT100)] <- mean(df_diagnosis$HMT100, na.rm = TRUE)
+mean(df_diagnosis$HMT102, na.rm = TRUE); df_diagnosis$HMT102[is.na(df_diagnosis$HMT102)] <- mean(df_diagnosis$HMT102, na.rm = TRUE)
+mean(df_diagnosis$RCT6, na.rm = TRUE); df_diagnosis$RCT6[is.na(df_diagnosis$RCT6)] <- mean(df_diagnosis$RCT6, na.rm = TRUE)
+mean(df_diagnosis$RCT11, na.rm = TRUE); df_diagnosis$RCT11[is.na(df_diagnosis$RCT11)] <- mean(df_diagnosis$RCT11, na.rm = TRUE)
+mean(df_diagnosis$RCT20, na.rm = TRUE); df_diagnosis$RCT20[is.na(df_diagnosis$RCT20)] <- mean(df_diagnosis$RCT20, na.rm = TRUE)
+mean(df_diagnosis$RCT392, na.rm = TRUE); df_diagnosis$RCT392[is.na(df_diagnosis$RCT392)] <- mean(df_diagnosis$RCT392, na.rm = TRUE)
+mean(df_diagnosis$LIMMTOTAL, na.rm = TRUE); df_diagnosis$LIMMTOTAL[is.na(df_diagnosis$LIMMTOTAL)] <- mean(df_diagnosis$LIMMTOTAL, na.rm = TRUE)
+mean(df_diagnosis$LDELTOTAL, na.rm = TRUE); df_diagnosis$LDELTOTAL[is.na(df_diagnosis$LDELTOTAL)] <- mean(df_diagnosis$LDELTOTAL, na.rm = TRUE)
+
+
+# ACTION 7 - Convert the Class outcome variable into binary class. Each class will have string value of "HC" and "nonHC"
+df_diagnosis$Diagnosis <- as.character(ifelse(df_diagnosis$Diagnosis == 1, "0", "1")) # For every class "diagnosis" = 1 from variable df_diagnosis, replace it with zero (healthy control) else replace the values with 1
+df_diagnosis$Diagnosis <- as.character(ifelse(df_diagnosis$Diagnosis == 1, "nonHC", "HC")) # from previous line of code, now replace the values = 1 with 'nonHC' while diagnosis = 0 is 'HC'
+df_diagnosis$PTGENDER <- as.character(ifelse(df_diagnosis$PTGENDER == 1, 'Female', 'Male'))
+df_diagnosis$PTGENDER <- as.factor(df_diagnosis$PTGENDER)
+
+# ACTION 8 - Convert the variable df_diagnosis to a datafram and save it into a variable which is now the clean data
+df_diagnosis.clean <- as.data.frame(df_diagnosis)
+
+# ACTION 9 - Write the dataframe into a csv file
+library(readr)
+#Write to CSV file
+write_csv(df_diagnosis.clean, "C:/Users/Seun/Documents/MSC DATA SCIENCE (ULSTER UNIVERSITY)/MACHINE LEARNING/Master_clean.main.csv")
+
+
+```
+
+
+```{r}
+
+################## GRAPHICAL ANALYSIS USING A CLEAN AND IMBALANCED DATASET  #############################
+
+# ACTION 1 - Copy the clean dataset that is imbalanced and save it into a variable
+df.imbalanced.clean <- df_diagnosis.clean
+
+
+# ACTION 2 - Remove column called 'patient ID' from the dataset because it is unimportant. Now there are 31 columns
+df.imbalanced.main <- df.imbalanced.clean[-1] # save the imbalanced clean dataset into a temporary variable for graphical analysis
+dim(df.imbalanced.main) 
+
+df.imbalanced.norm <- df.imbalanced.main %>% mutate(across(c(16,17,18,19,20,21,22,23,24,25,26,27,30), ~ (.-min(.)) / (max(.) - min(.))))
+
+plot.norm <- ggpairs(df.imbalanced.norm[c(16,17,18,19,20,21,22,23,24,25,26,27,30,31)])
+plot.norm
+
+# ACTION 3 - Create a Barplot of Distribution of the two class outcomes - HC and nonHC
+ggplot(df.imbalanced.main, aes(x=Diagnosis)) +
+  geom_bar() + labs(title = "Imbalanced Dataset - Distribution of Diagnosis among Patients")
+
+# ACTION 4 - Create a Barplot of Distribution of patient Age across the two genders
+ggplot(df.imbalanced.main, aes(x = Age)) +
+  geom_histogram(fill = "cornflowerblue",
+                 color = "white") +
+  facet_wrap(~PTGENDER, ncol = 1) +
+  labs(title = "Age distribution by Gender")
+
+# ACTION 5 - Barplot of Distribution of patient Age across the two clinical results - HC and nonHC
+ggplot(df.imbalanced.main, aes(x = Age)) +
+  geom_histogram(fill = "cornflowerblue",
+                 color = "white") +
+  facet_wrap(~Diagnosis, ncol = 1) +
+  labs(title = "Age distribution by clinical diagnosis")
+
+# ACTION 6 - Barplot of Distribution of Patient Memory Recall by Gender
+ggplot(df.imbalanced.main, aes(x = LIMMTOTAL)) +
+  geom_histogram(color = "white",
+                 fill = "cornflowerblue") +
+  facet_grid(PTGENDER ~ MMSCORE_) +
+  labs(title = "Immediate memory recall by sex and Mini-Mental-Score-Rating ",
+       x = "Number of story units recalled (0 - 25)")
+
+
+df.imbalanced.main$PTGENDER = as.factor(ifelse(df.imbalanced.main$PTGENDER == "Female",'1','2'))
+
+# ACTION 7 - Since Graphical analysis has been completed, all 30 columns (excluding class labels) are converted to numeric as we head towards model fitting
+df.imbalanced <- df.imbalanced.main %>% mutate_at(c(1:30), as.numeric) # save the temporary variable into dataframe called imbalanced data 'df.imbalanced'
+str(df.imbalanced)
+
+# ACTION 8 - Now We apply Upsample balancing technique to bring minority class 'nonHC' to the same level with HC so that the data is balanced
+zero <- which(df.imbalanced$Diagnosis == "HC")
+one <- which(df.imbalanced$Diagnosis == "nonHC")
+length(zero)
+length(one)
+
+dim(df.imbalanced)
+
+one.upsample <- sample(one,length(zero), replace = TRUE)
+length(one.upsample)
+
+# ACTION 9 - After balancing the imbalanced dataset with upsample, we save the balanced data into a new variable called 'df.balanced'
+df.balanced <- df.imbalanced[c(one.upsample, zero), ]
+str(df.balanced)
+
+df.balanced <- as.data.frame(df.balanced)
+
+dim(df.balanced)
+
+# ACTION 10 - We plot a Barplot to show the two classes - HC and nonHC as balanced dataset
+ggplot(df.balanced, aes(x=Diagnosis)) +
+  geom_bar() + labs(title = "Balanced Dataset Distribution of Diagnosis among Patients")
+
+
+# ACTION 11 - WRITE THE BALANCED DATASET INTO A CSV FILE
+library(readr)
+write_csv(df.balanced, "C:/Users/Seun/Documents/MSC DATA SCIENCE (ULSTER UNIVERSITY)/MACHINE LEARNING/Master_clean4.csv")
+
+
+```
+
+
+```{r}
+
+#######################################3 FEATURE SELECTION USING BORUTA METHOD #######################################
+
+library(caret)
+df.imbalanced.main$Diagnosis = as.factor(df.imbalanced.main$Diagnosis)
+set.seed(111)
+
+# ACTION 1 -  Run a Boruta Feature Selection method on the temporary variable called imbalanced.main which was used in graphical analysis 
+boruta <- Boruta(Diagnosis ~., data = df.imbalanced.main, doTrace = 2, maxRuns = 500)
+print(boruta)
+
+# ACTION 2 - Plot the boruta chart showing variable of high and low significance
+plot(boruta, las = 2, cex=.6)
+bor <- TentativeRoughFix(boruta)  
+print(bor)
+
+# this will enable us come up quick and insightful decision with attributes that are # tentative and clearly classifying the attributes by importance
+attStats(boruta)
+# normhits means that at a certain percentage of the time, the attribute was found more important that the shadow one
+# for a tentative decisioon it means that at a 50% percentage of the time the attribute was found less than the shadow attribute  
+
+
+```
+
+
+```{r}
+
+library(readr)
+write_csv(df.imbalanced, "C:/Users/Seun/Documents/MSC DATA SCIENCE (ULSTER UNIVERSITY)/MACHINE LEARNING/Master_imbalanced.csv")
+write_csv(df.balanced, "C:/Users/Seun/Documents/MSC DATA SCIENCE (ULSTER UNIVERSITY)/MACHINE LEARNING/Master_balanced.csv")
+
+
+df.balanced <- read.csv("C:/Users/Seun/Documents/MSC DATA SCIENCE (ULSTER UNIVERSITY)/MACHINE LEARNING/Master_balanced.csv")
+
+```
+
+
+```{r}
+
+######################### DATA PARTITIONING FOR MODEL FITTING  ################################
+
+df.balanced$Diagnosis <- as.factor(df.balanced$Diagnosis)
+df.imbalanced$Diagnosis <- as.factor(df.imbalanced$Diagnosis)
+dim(df.balanced)
+levels(df.balanced)
+
+# ACTION 1 - Partition the balanced data into 80% training and 20% testing
+set.seed(12345)
+df.balanced.model <- df.balanced$Diagnosis %>% createDataPartition(p = 0.8, list = FALSE)
+df.balanced.traindata <- df.balanced[df.balanced.model, ]
+df.balanced.testdata <- df.balanced[-df.balanced.model, ]
+
+# ACTION 2 - Partition the imbalanced data into 80% training and 20% testing
+df.imbalanced.model <- df.imbalanced$Diagnosis %>% createDataPartition(p = 0.8, list = FALSE)
+df.imbalanced.traindata <- df.imbalanced[df.imbalanced.model, ]
+df.imbalanced.testdata <- df.imbalanced[-df.imbalanced.model, ]
+#rm(df.balanced.model)
+
+
+```
+
+
+
+```{r}
+######################################  MODEL EVALUATION RESULTS WITH BALANCED DATA  ################################
+
+set.seed(111)
+library(rpart)
+library(rpart.plot)
+
+# ACTION 1 - Set cross validation settings for k=10 folds
+crossvalidation.settings <- trainControl(method = "repeatedcv", number = 10, repeats = 3, classProbs = T, savePredictions = T)
+
+
+# ACTION 2 - Fit a Decision Tree Model and obtain relevant Tree plot and Confusion Matrix
+df.balanced.DT.trainmodel <- rpart(Diagnosis ~ CDGLOBAL + LDELTOTAL + LIMMTOTAL + MMSCORE_ + RCT20, 
+                                   data=df.balanced.traindata, method='class', xval=10)
+
+rpart.plot(df.balanced.DT.trainmodel, yesno = TRUE)
+df.balanced.DT.trainmodel
+
+printcp(df.balanced.DT.trainmodel)
+plotcp(df.balanced.DT.trainmodel)
+
+pruned.balanced.DT.trainmodel <- prune(df.balanced.DT.trainmodel, 
+                                      cp = df.balanced.DT.trainmodel$cptable[which.min(df.balanced.DT.trainmodel$cptable[, "xerror"]), "CP"])
+rm(df.balanced.DT.trainmodel)
+rpart.plot(pruned.balanced.DT.trainmodel, yesno = TRUE)
+
+# Prediction and confusion Matrix test of DT Model
+df.balanced.DT.testmodel <- predict(pruned.balanced.DT.trainmodel, df.balanced.testdata, type = "class")
+
+confusion_matrix.DT <- confusionMatrix(df.balanced.DT.testmodel, reference = df.balanced.testdata$Diagnosis, positive = 'nonHC')
+confusion_matrix.DT
+
+
+# ACTION 3 - Fit a RANDOM FOREST CLASSIFICATION MODEL ann obtain confusion matrix results balanced accuracy, positive predictive value and negative predictive value
+set.seed(12345)
+df.balanced.RF.trainmodel <- train(Diagnosis ~ CDGLOBAL + LDELTOTAL + LIMMTOTAL + MMSCORE_ + RCT20, 
+                                  data=df.balanced.traindata, method='rf',
+                                  trControl = crossvalidation.settings, preProc = c("center","scale"))
+df.balanced.RF.trainmodel
+# OOB estimate means out of Bag estimate
+
+
+# Prediction and confusion Matrix test of Random Forest Model
+df.balanced.RF.testmodel <- predict(df.balanced.RF.trainmodel, df.balanced.testdata)
+
+confusion_matrix.RF <- confusionMatrix(predict(df.balanced.RF.trainmodel, df.balanced.testdata), df.balanced.testdata$Diagnosis, positive = 'nonHC')
+confusion_matrix.RF
+
+
+
+# ACTION 3 - Fit a LOGSITIC REGRESSION MODEL and obtain confusion matrix results balanced accuracy, postive predictive value and negative predictive value
+# change Diagnosis outcome variable for testdata
+#df.balanced.traindata$Diagnosis <- as.factor(ifelse(df.balanced.traindata$Diagnosis == "1", 1,0))
+#df.balanced.testdata$Diagnosis <- as.factor(ifelse(df.balanced.testdata$Diagnosis == "1", 1,0))
+set.seed(12345)
+df.balanced.LR.trainmodel = train(Diagnosis ~ CDGLOBAL + LDELTOTAL + LIMMTOTAL + MMSCORE_ + RCT20, 
+                                  data=df.balanced.traindata, family='binomial', method='glm', 
+                                  trControl = crossvalidation.settings, preProc = c("center","scale"))
+
+summary(df.balanced.LR.trainmodel)
+
+# Prediction and confusion Matrix test of DT Model
+df.balanced.LR.testmodel <- predict(df.balanced.LR.trainmodel, df.balanced.testdata)
+
+confusion_matrix.LR <- confusionMatrix(df.balanced.LR.testmodel, df.balanced.testdata$Diagnosis, positive = 'nonHC')
+confusion_matrix.LR
+
+
+
+
+# ACTION 5 - Fit a K Nearest Neigbour CLASSIFICATION MODEL and obtain confusion matrix results balanced accuracy, postive predictive value and negative predictive value
+# USING KNN TO PREDICT
+set.seed(12345)
+df.balanced.KNN.trainmodel = train(Diagnosis ~ CDGLOBAL + LDELTOTAL + LIMMTOTAL + MMSCORE_ + RCT20, 
+                                  data=df.balanced.traindata, method='knn', 
+                                  trControl = crossvalidation.settings, preProc = c("center","scale"))
+df.balanced.KNN.trainmodel
+plot(df.balanced.KNN.trainmodel)
+varImp(df.balanced.KNN.trainmodel)
+
+#Testing the KNN model with predictions on tesdata
+df.balanced.KNN.testmodel <- predict(df.balanced.KNN.trainmodel, newdata = df.balanced.testdata)
+
+confusion_matrix.KNN <- confusionMatrix(df.balanced.KNN.testmodel, df.balanced.testdata$Diagnosis, positive = 'nonHC')
+confusion_matrix.KNN
+
+
+
+# ACTION 6 - Fit a K Means Clustering MODEL and obtain confusion matrix results balanced accuracy, positive predictive value and negative predictive value
+# USING KMEANS FOR CLASSIFICATION
+
+library(factoextra)
+kmeans.data <- df.balanced
+colnames(kmeans.data)[31] <- c('class')
+kmeans.data <- kmeans.data %>% mutate_at(vars(-31), scale)
+kmeans.balanced <- kmeans.data[1:30] # exclude the categorical data column
+fviz_nbclust(kmeans.balanced, kmeans, method = "wss") + # Elbow method
+            geom_vline(xintercept = 2, linetype = 2)+
+            labs(subtitle = "Elbow method")
+#optimum.cluster <- NbClust(data = kmeans.balanced, distance = "euclidean",
+                            #min.nc = 2, max.nc = 10, method = 'kmeans',index = 'all')
+df.balanced.kmeans.trainmodel<- kmeans(kmeans.balanced, centers = 2, nstart = 25)  # center = 2 is no. of clusters from elbow method, he "nstart" is the number of iterations the algorithm will make using initial centroid configurations
+str(df.balanced.kmeans.trainmodel)
+
+fviz_cluster(df.balanced.kmeans.trainmodel,kmeans.balanced) # cluster plot on the fitted trainmodel
+balanced.kmeans.clustermodel <- as.data.frame(df.balanced.kmeans.trainmodel$cluster)
+names(balanced.kmeans.clustermodel)[1] <- 'class'
+balanced.kmeans.clustermodel$class <- as.factor(ifelse(balanced.kmeans.clustermodel
+                                                    == '1','HC','nonHC'))
+
+confusionMatrix(kmeans.data$class, balanced.kmeans.clustermodel$class, positive = 'nonHC')
+
+
+
+
+```
+
+
+```{r}
+
+#########################  MODEL EVALUATION RESULTS USING AN IMBALANCED DATASET ################################
+
+set.seed(111)
+library(rpart)
+library(rpart.plot)
+
+# ACTION 1 - Set cross validation settings for k=10 folds
+crossvalidation.settings <- trainControl(method = "repeatedcv", number = 10, repeats = 3, classProbs = T, savePredictions = T)
+
+# ACTION 2 - Fit a DECISION TREE Model and obtain relevant Tree plot and Confusion Matrix
+df.imbalanced.DT.trainmodel <- rpart(Diagnosis ~ CDGLOBAL + LDELTOTAL + LIMMTOTAL + MMSCORE_ + RCT20, 
+                                   data=df.imbalanced.traindata, method='class', xval=10)
+
+rpart.plot(df.imbalanced.DT.trainmodel, yesno = TRUE)
+df.imbalanced.DT.trainmodel
+
+printcp(df.imbalanced.DT.trainmodel)
+plotcp(df.imbalanced.DT.trainmodel)
+
+pruned.imbalanced.DT.trainmodel <- prune(df.imbalanced.DT.trainmodel, 
+                                       cp = df.imbalanced.DT.trainmodel$cptable[which.min(df.imbalanced.DT.trainmodel$cptable[, "xerror"]), "CP"])
+rm(df.imbalanced.DT.trainmodel)
+rpart.plot(pruned.imbalanced.DT.trainmodel, yesno = TRUE)
+
+# Prediction and confusion Matrix test of DT Model
+df.imbalanced.DT.testmodel <- predict(pruned.imbalanced.DT.trainmodel, df.imbalanced.testdata, type = "class")
+
+confusion_matrix.DT.imb <- confusionMatrix(df.imbalanced.DT.testmodel, reference = df.imbalanced.testdata$Diagnosis, positive = 'nonHC')
+confusion_matrix.DT.imb
+
+
+# ACTION 2 - Fit a Random Forest Model and obtain relevant Tree plot and Confusion Matrix
+# Using Random forest (RF) classification model on the entire dataset
+set.seed(12345)
+df.imbalanced.RF.trainmodel <- train(Diagnosis ~ CDGLOBAL + LDELTOTAL + LIMMTOTAL + MMSCORE_ + RCT20, 
+                                    data=df.imbalanced.traindata, method='rf',
+                                    trControl = crossvalidation.settings, preProc = c("center","scale"))
+df.imbalanced.RF.trainmodel
+# OOB estimate means out of Bag estimate
+
+
+# Prediction and confusion Matrix test of Random Forest Model
+df.imbalanced.RF.testmodel <- predict(df.imbalanced.RF.trainmodel, df.imbalanced.testdata)
+
+confusion_matrix.RF.imb <- confusionMatrix(predict(df.imbalanced.RF.trainmodel, df.imbalanced.testdata), df.imbalanced.testdata$Diagnosis, positive = 'nonHC')
+confusion_matrix.RF.imb
+
+
+
+# ACTION 3 - Fit a LOGISTIC REGRESSION Model and obtain relevant Tree plot and Confusion Matrix
+# USING LOGISTIC REGRESSION MODEL TO FIT DATA
+set.seed(12345)
+df.imbalanced.LR.trainmodel = train(Diagnosis ~ CDGLOBAL + LDELTOTAL + LIMMTOTAL + MMSCORE_ + RCT20, 
+                                  data=df.imbalanced.traindata, family='binomial', method='glm', 
+                                  trControl = crossvalidation.settings, preProc = c("center","scale"))
+
+summary(df.imbalanced.LR.trainmodel)
+
+# Prediction and confusion Matrix test of DT Model
+df.imbalanced.LR.testmodel <- predict(df.imbalanced.LR.trainmodel, df.imbalanced.testdata)
+
+confusion_matrix.LR.imb <- confusionMatrix(df.imbalanced.LR.testmodel, df.imbalanced.testdata$Diagnosis, positive = 'nonHC')
+confusion_matrix.LR.imb
+
+
+# ACTION 4 - Fit a K NEAREST NEIGHBOUR MODEL and obtain relevant Tree plot and Confusion Matrix
+# USING KNN TO PREDICT
+set.seed(12345)
+df.imbalanced.KNN.trainmodel = train(Diagnosis ~ CDGLOBAL + LDELTOTAL + LIMMTOTAL + MMSCORE_ + RCT20, 
+                                   data=df.imbalanced.traindata, method='knn', 
+                                   trControl = crossvalidation.settings, preProc = c("center","scale"))
+plot(df.imbalanced.KNN.trainmodel)
+varImp(df.imbalanced.KNN.trainmodel)
+
+#Testing the KNN model with predictions on tesdata
+df.imbalanced.KNN.testmodel <- predict(df.imbalanced.KNN.trainmodel, newdata = df.imbalanced.testdata)
+
+confusion_matrix.KNN.imb <- confusionMatrix(df.imbalanced.KNN.testmodel, df.imbalanced.testdata$Diagnosis, positive = 'nonHC')
+confusion_matrix.KNN.imb
+
+
+# ACTION 5 - Fit a K MEANS MODEL and obtain relevant Tree plot and Confusion Matrix
+
+library(factoextra)
+set.seed(12345)
+kmeans.data.imb <- df.imbalanced
+colnames(kmeans.data.imb)[31] <- c('class')
+kmeans.data.imb <- kmeans.data.imb %>% mutate_at(vars(-31), scale)
+kmeans.imbalanced <- kmeans.data.imb[1:30] # exclude the categorical data column
+fviz_nbclust(kmeans.imbalanced, kmeans, method = "wss") + # Elbow method
+  geom_vline(xintercept = 2, linetype = 2)+
+  labs(subtitle = "Elbow method")
+#optimum.cluster.imb <- NbClust(data = kmeans.imbalanced, distance = "euclidean",
+                           #min.nc = 2, max.nc = 10, method = 'kmeans',index = 'all')
+set.seed(12345)
+df.imbalanced.kmeans.trainmodel<- kmeans(kmeans.imbalanced, centers = 2, nstart = 25)  # center = 2 is no. of clusters from elbow method, he "nstart" is the number of iterations the algorithm will make using initial centroid configurations
+str(df.imbalanced.kmeans.trainmodel)
+
+fviz_cluster(df.imbalanced.kmeans.trainmodel, kmeans.imbalanced) # cluster plot on the fitted trainmodel
+imbalanced.kmeans.clustermodel <- as.data.frame(df.imbalanced.kmeans.trainmodel$cluster)
+names(imbalanced.kmeans.clustermodel)[1] <- 'class'
+imbalanced.kmeans.clustermodel$class <- as.factor(ifelse(imbalanced.kmeans.clustermodel
+                                                       == '1','HC','nonHC'))
+
+confusionMatrix(kmeans.data.imb$class, imbalanced.kmeans.clustermodel$class, positive = 'nonHC')
+
+```
+
