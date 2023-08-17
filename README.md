@@ -40,6 +40,7 @@ D. Class Balancing
 
 # Results
 
+Insight 1
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/b2c0bc2a-239c-485b-8eb4-a8f13c59b362)
 - Also, it was observed in the right section above (distribution plot) that the distribution of patient’s age across each diagnosis type follows a gaussian distribution
 - cases of non-HC diagnosis were observed to be prevalent among patients who are above 73 years, and this trend continued until patients reached 80 years.
@@ -47,12 +48,14 @@ D. Class Balancing
 
 ---
 
+Insight 2
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/9ca82e23-397d-4ee1-8690-95bf99349982)
 - The numbers 1- 4 represent the ratings of the Mini Mental Score Exam. The exam was scored from 0 to 30. The ratings are defined as; 1 = Normal (30-25), 2 = Mild/early (24-21), 3 = Moderate (20-10), and 4 = Severe (9-0)
 - it is observed that majority of both male and female patients have a normal mental health rating score, however, there were few cases of both gender groups having patients with mild/early symptoms
 
 ---
 
+Insight 3
 ![image](https://github.com/seun-awonuga/Application-of-Machine-Learning-Techniques-to-Classify-Patients-with-Alzheimer-s-Disease-/assets/61943241/03d7efb9-69c3-461a-a59b-b001d675a320)
 - the boxplot shows the decreasing order of importance of each feature linked to the diagnosis outcome
 - nine (9) variables were considered important, however considering the boxplot; five features - CDGLOBAL, LDELTOTAL, LIMMTOTAL, MMSCORE and RCT20 will be considered in fitting the classifier model because their importance is significantly greater than other features
